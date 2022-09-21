@@ -19,18 +19,18 @@ $dbConnection = new DatabaseConnection("mysql:host=127.0.0.1;dbname=test;charset
             <br>
             <br>
             <label for="name">Name:</label>
-            <input type="text" name="name" id="name" value="<?php getNameValue($dbConnection); ?>">
+            <input type="text" name="name" id="name" value="<?php getNameValue($dbConnection); ?>" required>
             <br>
             <br>
             <label for="sectors" >Sectors:</label>
-            <select id="sectors" name="sectors[]" multiple size="5">
+            <select id="sectors" name="sectors[]" multiple size="5" required>
             <?php
                 getSelectOptions($dbConnection);
             ?>
             </select>
             <br>
             <br>
-            <input type="checkbox" name="terms" id="terms" <?php getTermsChecked($dbConnection); ?>>
+            <input type="checkbox" name="terms" id="terms" <?php getTermsChecked($dbConnection); ?> required>
             <label for="terms">Agree to terms</label>
             <br>
             <br>

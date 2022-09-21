@@ -8,9 +8,11 @@ class DatabaseConnection
         try {
             $this->PDO = new PDO($dsn);
             $this->PDO->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            
+            // Create array to store prepare or 'prime' data for use
             $this->queryResults = array('user_data' => array(), 'sector_data' => array());
         } catch(PDOException $e) {
-            print $e->getMessage();
+            exit(print($e->getMessage()));
         }
     }
 
@@ -35,7 +37,6 @@ class DatabaseConnection
     public function execute(string $statement, array $variables = null): PDOStatement {
         $PDOStatement = $this->PDO->prepare($statement);
         $PDOStatement->execute($variables);
-
 
         return $PDOStatement;
     }

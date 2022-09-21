@@ -1,6 +1,7 @@
 <?php
 require_once ("database_connection.php");
 
+#region Session initialization and security
 function initializeSession(): void {
     // Configurations for added session security
     ini_set('session.use_strict_mode', 1);
@@ -35,7 +36,9 @@ function isSessionTimedOut(): bool {
 
     return false;
 }
+#endregion Session
 
+#region Input validation
 function isInputInvalid(): bool {
     // 'name' input can only contain letters and whitespaces, and must contain at least 1 letter
     if(preg_match_all("/[a-z]/i", $_POST['name'])) {
@@ -75,8 +78,10 @@ function isInputInvalid(): bool {
     
     return false;
 }
+#endregion Input validation
 
-function initializeContent($datasource): void {
+#region Error handling and content initialization
+function initializeContent(DatabaseConnection $datasource): void {
     // Check if error flags are present
     if(isset($_SESSION['error_flags'])) {
         // Resets error flags and displays the relevant error message
@@ -111,30 +116,35 @@ function handleErrors(): void {
     // Terminate current page execution
     exit();
 }
+#endregion Content and error handling
 
-function databaseTransaction($datasource): void {
-    // Start database transaction
-    $datasource->getPDO()->beginTransaction();
+#region Database actions
+function databaseTransaction(DatabaseConnection $datasource): void {
+    try {
+        $datasource->getPDO()->beginTransaction();
 
-    // Updates database and primes user entered data for form fill
-    // if the 'Save' button was pressed
-    if(isset($_POST['submit'])) {
-        postAction($datasource);
+        // Updates database and primes user entered data for form fill
+        // if the 'Save' button was pressed
+        if(isset($_POST['submit'])) {
+            postAction($datasource);
 
-        $datasource->query(
-            "SELECT users.user_id, users.user_name, users.terms_agreed, user_sector_data.sector_id 
-            FROM users INNER JOIN user_sector_data ON user_sector_data.user_id = ? AND users.user_id = ?",
-            'user_data', array($_SESSION['user_id'], $_SESSION['user_id']));
+            $datasource->query(
+                "SELECT users.user_id, users.user_name, users.terms_agreed, user_sector_data.sector_id 
+                FROM users INNER JOIN user_sector_data ON user_sector_data.user_id = ? AND users.user_id = ?",
+                'user_data', array($_SESSION['user_id'], $_SESSION['user_id']));
+        }
+
+        // Prime sector data for form fill
+        $datasource->query("SELECT * FROM sectors", 'sector_data');
+        
+        // End database transaction and commit changes
+        $datasource->getPDO()->commit();
+    } catch(PDOException $e) {
+        $datasource->rollBack();
     }
-
-    // Prime sector data for form fill
-    $datasource->query("SELECT * FROM sectors", 'sector_data');
-    
-    // End database transaction and commit changes
-    $datasource->getPDO()->commit();
 }
 
-function postAction($datasource): void {
+function postAction(DatabaseConnection $datasource): void {
     $name = $_POST['name'];
     $sectors = $_POST['sectors'];
     $terms = ($_POST['terms'] == "on")? 1 : 0;
@@ -163,19 +173,22 @@ function postAction($datasource): void {
     
     $datasource->execute($insertUserSectors);
 }
+#endregion Database actions
 
-function getSelectOptions($datasource): void {
+#region Form fill actions
+function getSelectOptions(DatabaseConnection $datasource): string {
     // Get user sector data from primed data
     $sectorData = $datasource->getData('sector_data');
     $userData = $datasource->getData('user_data');
 
-    // Return hierarchically sorted select box options
-    populateSelect($sectorData, $userData);
+    // Find and print select box options
+    return print(populateSelect($sectorData, $userData));
 }
 
 function populateSelect(array $sectorData, array $userData,
-    int $sector_id = 0, int $level = 0): void {
+    int $sector_id = 0, int $level = 0): string {
     $currentLevel = $level;
+    $options = "";
 
     // Start building the <option> HTML element
     foreach($sectorData as $element) {
@@ -194,16 +207,19 @@ function populateSelect(array $sectorData, array $userData,
             $option .= 'value="' . $element['sector_id'] . '">' .
                 str_repeat("&emsp;", $currentLevel) .
                 ($element['sector_name']) . '</option>';
-            print $option;
 
             // Find child sectors of element
-            populateSelect($sectorData, $userData,
+            $option .= populateSelect($sectorData, $userData,
                 $element['sector_id'], $currentLevel + 1);
+            
+            $options .= $option;
         }
     }
+
+    return $options;
 }
 
-function getNameValue($datasource): string {
+function getNameValue(DatabaseConnection $datasource): string {
     // Get user name from primed data
     if(isset($_SESSION['user_id'])) {
         return print($datasource->getData('user_data')[0]['user_name']);
@@ -212,7 +228,7 @@ function getNameValue($datasource): string {
     return "";
 }
 
-function getTermsChecked($datasource): string {
+function getTermsChecked(DatabaseConnection $datasource): string {
     // Get checkbox state from primed data
     if(isset($_SESSION['user_id'])) {
         $checked = $datasource->getData('user_data')[0]['terms_agreed'];
@@ -222,3 +238,4 @@ function getTermsChecked($datasource): string {
 
     return "";
 }
+#endregion Form fill

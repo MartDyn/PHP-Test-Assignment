@@ -36,7 +36,7 @@ function isSessionTimedOut(): bool {
 
     return false;
 }
-#endregion Session
+#endregion Session initialization and security
 
 #region Input validation
 function isInputInvalid(): bool {
@@ -116,7 +116,7 @@ function handleErrors(): void {
     // Terminate current page execution
     exit();
 }
-#endregion Content and error handling
+#endregion Error handling and content initialization
 
 #region Database actions
 function databaseTransaction(DatabaseConnection $datasource): void {

@@ -4,7 +4,7 @@ class DatabaseConnection
     private PDO $PDO;
     private array $queryResults;
 
-    public function __construct($dsn) {
+    public function __construct(string $dsn) {
         try {
             $this->PDO = new PDO($dsn);
             $this->PDO->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

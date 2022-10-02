@@ -140,7 +140,7 @@ function databaseTransaction(DatabaseConnection $datasource): void {
         // End database transaction and commit changes
         $datasource->getPDO()->commit();
     } catch(PDOException $e) {
-        $datasource->rollBack();
+        $datasource->getPDO()->rollBack();
     }
 }
 
